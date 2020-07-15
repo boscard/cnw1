@@ -33,3 +33,41 @@ module "aws_vpc" {
     "kubernetes.io/role/internal-elb"           = "1"
   }
 }
+
+module "eks" {
+  source           = "terraform-aws-modules/eks/aws"
+  cluster_name     = var.cluster_name
+  subnets          = module.aws_vpc.private_subnets
+  cluster_version  = var.k8s_version
+  write_kubeconfig = false
+  vpc_id           = module.aws_vpc.vpc_id
+
+  worker_groups = [
+    {
+      name                          = "worker-group-1"
+      instance_type                 = var.worker_node_type
+      additional_userdata           = "echo foo bar"
+      asg_desired_capacity          = var.worker_node_count
+    }
+  ]
+
+  map_roles                            = []
+  map_users                            = []
+  map_accounts                         = []
+}
+
+data "aws_eks_cluster" "cluster" {
+  name = module.eks.cluster_id
+}
+
+data "aws_eks_cluster_auth" "cluster" {
+  name = module.eks.cluster_id
+}
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+  load_config_file       = false
+  version                = "~> 1.9"
+}
