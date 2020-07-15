@@ -71,3 +71,35 @@ provider "kubernetes" {
   load_config_file       = false
   version                = "~> 1.9"
 }
+
+resource "helm_release" "rocketchat" {
+  name             = "chat"
+  create_namespace = true
+  namespace        = "default"
+  chart            = "rocketchat"
+  repository       = "https://kubernetes-charts.storage.googleapis.com"
+  version          = "2.0.2"
+
+  values = [file("${path.module}/rocketchat-values.yaml")]
+
+  set {
+    type  = "string"
+    name  = "host"
+    value = "chat.${var.dns_domain}"
+  }
+  set {
+    type  = "string"
+    name  = "ingress.tls[0].hosts[0]"
+    value = "chat.${var.dns_domain}"
+  }
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = data.aws_eks_cluster.cluster.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+    token                  = data.aws_eks_cluster_auth.cluster.token
+    load_config_file       = false
+  }
+}
+

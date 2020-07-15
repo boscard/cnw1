@@ -22,3 +22,8 @@ variable "k8s_version" {
     type = string
     default = "1.15"
 }
+
+variable "dns_domain" {
+    type = string
+    default = "boscard-cnw1.k8sworkshops.com"
+}
