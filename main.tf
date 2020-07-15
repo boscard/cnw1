@@ -103,3 +103,15 @@ provider "helm" {
   }
 }
 
+module "addons" {
+  source         = "github.com/cloudowski/terraform-k8s-modules//addons?ref=0.0.6"
+  install_addons = ["nginx-ingress"]
+}
+
+module "cert-manager" {
+  source = "github.com/cloudowski/terraform-k8s-modules//apps/cert-manager?ref=0.0.6"
+  solver     = "ingress"
+  install    = true
+  acme_email = "bosacme@boscard.pl" # <- zmień to
+  dns_domain = var.dns_domain
+}
